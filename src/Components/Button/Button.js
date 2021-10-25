@@ -6,18 +6,18 @@ function Button(props) {
 
   useEffect(() => {
     props.onClick(pageNum);
+
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.lastChild.scrollHeight,
+        behavior: 'smooth',
+      });
+    }, 500);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNum]);
 
   const handleClick = () => {
     setPageNum(prev => prev + 1);
-
-    setTimeout(() => {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: 'smooth',
-      });
-    }, 500);
 
     return;
   };

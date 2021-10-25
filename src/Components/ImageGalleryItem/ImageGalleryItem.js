@@ -10,39 +10,46 @@ const base_url = 'https://pixabay.com/api/';
 const api_key = '23038221-87f79236823d8e345a162521c';
 const newPixabay = new Pixabay(base_url, api_key);
 
+export const useKey = (key, init_value) => {
+  const [state, setState] = useState(
+    () => JSON.parse(localStorage.getItem(key)) ?? init_value,
+  );
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(state));
+  }, [key, state]);
+  return [state, setState];
+};
+
 function ImageGalleryItem(props) {
+  const { pageNum, queryImg, imgItemsList } = props;
   const [status, setStatus] = useState('init');
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useKey('keyImages', []);
 
   useEffect(() => {
-    const { queryImg, imgItemsList } = props;
     setStatus('pending');
+    if (!queryImg.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setStatus('pending');
+    newPixabay.resetPage();
     newPixabay.searchQuery = queryImg;
-    newPixabay.searchPage = 1;
+    newPixabay.searchPage = pageNum;
     newPixabay
       .searchPhotos()
       .then(searchResults => {
-        if (props.queryImg === '') {
-          setStatus('init');
-        } else if (searchResults.length > 0) {
-          setSearchResults(searchResults);
-          imgItemsList(searchResults.length);
-          setStatus('success');
-        } else if (searchResults.length === 0) {
-          setStatus('incorrect');
-          toast.error('PLEASE, INPUT CORRECT REQUEST!!!');
-          // props.pageNum = 1;
-          imgItemsList(searchResults.length);
-        }
+        setSearchResults(searchResults);
+        imgItemsList(searchResults.length);
+        setStatus('success');
       })
       .catch(() => {
         setStatus('error');
       });
-  }, [props.queryImg]);
+  }, [queryImg]);
 
   useEffect(() => {
     const { pageNum } = props;
-    setStatus('pending');
     newPixabay.searchPage = pageNum;
     newPixabay
       .searchPhotos()
@@ -53,22 +60,27 @@ function ImageGalleryItem(props) {
       .catch(() => {
         setStatus('error');
       });
-  }, [props.pageNum]);
+  }, [pageNum]);
 
   const setActiveImgIdx = index => {
     const activeImg = searchResults[index];
     props.onClick(activeImg);
   };
 
-  return (
-    <>
-      {props.queryImg === '' && <h1>Hello! Search something...</h1>}
-      {status === 'pending' && <Loader />}
-      {status === 'incorrect' && <h1>No results were found...</h1>}
-      {status === 'success' &&
-        searchResults.length > 0 &&
-        searchResults.map((img, index) => {
-          return (
+  if (!queryImg.trim()) {
+    return <h1>Hello! Search something...</h1>;
+  }
+  if (status === 'pending') {
+    return <Loader />;
+  }
+  if (queryImg.trim() && searchResults.length === 0) {
+    return <h1>No results were found...</h1>;
+  }
+  if (status === 'success') {
+    return (
+      <>
+        {searchResults.length > 0 &&
+          searchResults.map((img, index) => (
             <li key={img.id} className={s.ImageGalleryItem}>
               <img
                 src={img.webformatURL}
@@ -77,11 +89,13 @@ function ImageGalleryItem(props) {
                 onClick={() => setActiveImgIdx(index)}
               />
             </li>
-          );
-        })}
-      {status === 'error' && toast.error('ALARM!!!')}
-    </>
-  );
+          ))}
+      </>
+    );
+  }
+  if (status === 'error') {
+    return status === 'error' && toast.error('ALARM!!!');
+  }
 }
 
 ImageGalleryItem.propTypes = {

@@ -9,7 +9,6 @@ class Pixabay {
     this.api_key = api_key;
     this._searchPage = 1;
     this._searchQuery = '';
-    console.log(this._searchQuery);
   }
 
   get searchQuery() {
@@ -17,6 +16,9 @@ class Pixabay {
   }
   set searchQuery(value) {
     return (this._searchQuery = value);
+  }
+  resetPage() {
+    return (this._searchPage = 1);
   }
   get searchPage() {
     return this._searchPage;
